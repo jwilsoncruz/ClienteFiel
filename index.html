@@ -59,7 +59,7 @@ const DEF={pin:'1234',ppb:1,lines:{Venta:1},dd:{day:2,mult:2,name:'Martes doble 
 rewards:[['Refresco',100],['Hamburguesa',250],['Cuarto de pollo',400],['Medio pollo',800],['Pollo entero',1600]],
 promos:['5% extra en tu cumpleaños: +100 pts todo el mes','Invita a un amigo: +100 pts para ambos'],bonus:{welcome:50,bday:100,ref:100}};
 /* ===== PEGA AQUÍ TU CONFIGURACIÓN DE FIREBASE ===== */
-const FB_CONFIG={apiKey:"TU_API_KEY",authDomain:"TU_PROYECTO.firebaseapp.com",projectId:"TU_PROYECTO",appId:"TU_APP_ID"};
+const FB_CONFIG={apiKey:"AIzaSyDHZaPeYgfcpwvrJbm0HoaL_P380Dfwn-U",authDomain:"clientesfieles-92075.firebaseapp.com",projectId:"clientesfieles-92075",storageBucket:"clientesfieles-92075.firebasestorage.app",messagingSenderId:"876601108680",appId:"1:876601108680:web:25629d0456593b524dddfd"};
 firebase.initializeApp(FB_CONFIG);const db=firebase.firestore(),auth=firebase.auth();
 const Q=new URLSearchParams(location.search),SLUG=(Q.get('n')||'').toLowerCase().replace(/[^a-z0-9-]/g,''),ADMIN=Q.has('admin');
 let S={cfg:DEF,c:{}},snap={},BIZ={};
