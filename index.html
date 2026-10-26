@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Club de clientes</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{--bg:#fff8f0;--card:#fff;--tx:#2b1a10;--mu:#7a6555;--pr:#d9480f;--ac:#f59f00;--bd:#ecd9c6;--ok:#2f9e44;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c1410;--card:#2a1e17;--tx:#f7ece2;--mu:#bfa592;--pr:#ff7a3d;--ac:#ffc233;--bd:#43332a;--ok:#51cf66}}
+:root[data-theme="dark"]{--bg:#1c1410;--card:#2a1e17;--tx:#f7ece2;--mu:#bfa592;--pr:#ff7a3d;--ac:#ffc233;--bd:#43332a;--ok:#51cf66}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,Segoe UI,Roboto,sans-serif}
+main{max-width:760px;margin:0 auto;padding:14px}
+h1{font-size:22px;margin:4px 0}h2{font-size:17px;margin:18px 0 8px}
+.tabs{display:flex;gap:6px;margin:10px 0;flex-wrap:wrap}
+.tabs button,.btn{background:var(--card);color:var(--tx);border:1px solid var(--bd);border-radius:10px;padding:10px 14px;font:inherit;cursor:pointer}
+.tabs button.on,.btn.p{background:var(--pr);color:#fff;border-color:var(--pr)}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin:10px 0}
+input,select{width:100%;padding:10px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx);font:inherit;margin:4px 0 8px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pts{font-size:38px;font-weight:800;color:var(--pr)}
+.bar{height:10px;background:var(--bd);border-radius:9px;overflow:hidden}.bar i{display:block;height:100%;background:var(--ac)}
+.tier{display:inline-block;padding:3px 10px;border-radius:99px;background:var(--ac);color:#000;font-weight:700;font-size:13px}
+.rw{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bd)}
+.mu{color:var(--mu);font-size:13px}.ok{color:var(--ok)}.hide{display:none}
+.ov{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:6px;border-bottom:1px solid var(--bd);text-align:left;white-space:nowrap}
+#qr{display:flex;justify-content:center;background:#fff;padding:12px;border-radius:12px;width:max-content;margin:8px auto}
+.banner{background:linear-gradient(135deg,var(--pr),var(--ac));color:#fff;border-radius:14px;padding:14px}
+</style></head><body><main>
+<h1 id="bn">Club de clientes</h1><div class="mu" id="bs"></div><section id="sa" class="hide"></section><div id="app" class="hide">
+<div class="banner" id="promoBan" style="margin-top:10px"></div>
+<div class="tabs"><button class="on" data-t="card">Mi tarjeta</button><button data-t="caja">Caja</button><button data-t="adm">Admin</button></div>
+
+<section id="card">
+ <div class="card" id="reg"><h2 style="margin-top:0">Únete y gana 50 puntos</h2>
+  <input id="rn" placeholder="Nombre"><input id="rp" type="tel" placeholder="Celular (será tu número de socio)">
+  <div class="row"><div><label class="mu">Cumpleaños</label><input id="rb" type="date"></div><div><label class="mu">Celular de quien te invitó</label><input id="rr" type="tel" placeholder="Opcional (+100 pts)"></div></div>
+  <button class="btn p" onclick="reg()">Crear mi tarjeta</button>
+  <hr style="border:0;border-top:1px solid var(--bd);margin:14px 0"><div class="mu">¿Ya eres socio?</div><input id="lp" type="tel" placeholder="Tu celular"><button class="btn" onclick="login()">Ver mi tarjeta</button></div>
+ <div id="mine" class="hide"></div>
+</section>
+
+<section id="caja" class="hide">
+ <div class="card" id="lock"><b>Acceso del personal</b><input id="pin" type="password" placeholder="PIN"><button class="btn p" onclick="unlock('caja')">Entrar</button></div>
+ <div id="cajaBody" class="hide">
+  <div class="card"><b>Buscar socio</b><input id="cs" type="tel" placeholder="Celular o escanea el QR">
+   <div style="display:flex;gap:8px"><button class="btn p" onclick="find()">Buscar</button><button class="btn" onclick="scan()">📷 Escanear QR</button></div><video id="vid" class="hide" style="width:100%;border-radius:10px;margin-top:8px" playsinline></video></div>
+  <div id="cust"></div>
+ </div>
+</section>
+
+<section id="adm" class="hide">
+ <div class="card" id="lock2"><b>Acceso del dueño</b><input id="pin2" type="password" placeholder="PIN"><button class="btn p" onclick="unlock('adm')">Entrar</button></div>
+ <div id="admBody" class="hide"></div>
+</section>
+</div></main>
+<script>
+const KEY='rhosse_club_v1',TIERS=[['Bronce',0,1],['Plata',1000,1.1],['Oro',3000,1.25],['Diamante',8000,1.5]];
+const DEF={pin:'1234',ppb:1,lines:{Venta:1},dd:{day:2,mult:2,name:'Martes doble de puntos'},
+rewards:[['Refresco',100],['Hamburguesa',250],['Cuarto de pollo',400],['Medio pollo',800],['Pollo entero',1600]],
+promos:['5% extra en tu cumpleaños: +100 pts todo el mes','Invita a un amigo: +100 pts para ambos'],bonus:{welcome:50,bday:100,ref:100}};
+/* ===== PEGA AQUÍ TU CONFIGURACIÓN DE FIREBASE ===== */
+const FB_CONFIG={apiKey:"TU_API_KEY",authDomain:"TU_PROYECTO.firebaseapp.com",projectId:"TU_PROYECTO",appId:"TU_APP_ID"};
+firebase.initializeApp(FB_CONFIG);const db=firebase.firestore(),auth=firebase.auth();
+const Q=new URLSearchParams(location.search),SLUG=(Q.get('n')||'').toLowerCase().replace(/[^a-z0-9-]/g,''),ADMIN=Q.has('admin');
+let S={cfg:DEF,c:{}},snap={},BIZ={};
+const bref=()=>db.collection('negocios').doc(SLUG),basic=()=>BIZ.plan==='basico';
+const save=()=>{for(const p in S.c){const j=JSON.stringify(S.c[p]);if(snap[p]!==j){snap[p]=j;bref().collection('socios').doc(p).set(S.c[p])}}};
+const $=i=>document.getElementById(i),DAYS=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const tier=c=>[...TIERS].reverse().find(t=>c.life>=t[1]);
+const nextT=c=>TIERS.find(t=>t[1]>c.life);
+const esc=s=>String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+let me=null;
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x==b));['card','caja','adm'].forEach(s=>$(s).classList.toggle('hide',s!=b.dataset.t))});
+function banner(){const d=S.cfg.dd,t=new Date().getDay()==d.day;$('promoBan').innerHTML='<b>'+(t?'🔥 HOY: '+esc(d.name)+' (x'+d.mult+')':'📅 '+esc(d.name)+': todos los '+DAYS[d.day].toLowerCase()+'s')+'</b><div style="font-size:13px;margin-top:4px">'+S.cfg.promos.map(esc).join(' · ')+'</div>'}
+function add(c,type,pts,note){c.pts+=pts;if(pts>0&&type!='canje')c.life+=pts;c.h.unshift({d:new Date().toLocaleString('es-BO'),type,pts,note});c.h=c.h.slice(0,60)}
+function reg(){const n=$('rn').value.trim(),p=$('rp').value.replace(/\D/g,'');if(!n||p.length<7)return alert('Escribe tu nombre y un celular válido');
+ if(S.c[p])return alert('Ese celular ya es socio. Usa "Ver mi tarjeta".');
+ const c={n,p,b:$('rb').value,pts:0,life:0,h:[],ref:'',used:{}};add(c,'bono',S.cfg.bonus.welcome,'Bienvenida');
+ const r=$('rr').value.replace(/\D/g,'');if(r&&S.c[r]&&r!=p){c.ref=r;add(c,'bono',S.cfg.bonus.ref,'Invitado por '+S.c[r].n);add(S.c[r],'bono',S.cfg.bonus.ref,'Invitaste a '+n)}
+ S.c[p]=c;save();me=p;showMine()}
+function login(){const p=$('lp').value.replace(/\D/g,'');if(!S.c[p])return alert('No encontramos ese celular. Regístrate arriba.');me=p;showMine()}
+function bar(c){const n=nextT(c);return n?'<div class="bar"><i style="width:'+Math.min(100,(c.life-tier(c)[1])/(n[1]-tier(c)[1])*100)+'%"></i></div><div class="mu">Te faltan '+(n[1]-c.life)+' pts para nivel '+n[0]+'</div>':'<div class="mu">¡Nivel máximo! 👑</div>'}
+function showMine(){const c=S.c[me];$('reg').classList.add('hide');const m=$('mine');m.classList.remove('hide');
+ const bd=c.b&&c.b.slice(5)==new Date().toISOString().slice(5,7)+'' ? '':'';
+ m.innerHTML='<div class="card"><div style="display:flex;justify-content:space-between"><b>'+esc(c.n)+'</b><span class="tier">'+tier(c)[0]+' ×'+tier(c)[2]+'</span></div><div class="pts">'+c.pts+' <small style="font-size:15px">puntos</small></div>'+bar(c)+'<div id="qr"></div><div class="mu" style="text-align:center">Muestra este QR en caja · Socio '+c.p+'<br>Haz captura de pantalla para guardarlo</div></div>'
+ +'<div class="card"><b>🎁 Premios</b>'+S.cfg.rewards.map(r=>'<div class="rw"><span>'+esc(r[0])+'</span><span class="'+(c.pts>=r[1]?'ok':'mu')+'">'+r[1]+' pts '+(c.pts>=r[1]?'✓ disponible':'')+'</span></div>').join('')+'</div>'
+ +'<div class="card pro"><b>👥 Invita y gana</b><div class="mu">Tu amigo pone tu celular ('+c.p+') al registrarse y ambos ganan '+S.cfg.bonus.ref+' pts.</div><a class="btn" style="display:inline-block;margin-top:8px;text-decoration:none" target="_blank" href="https://wa.me/?text='+encodeURIComponent('Únete al Club Rhosse de Go Pollos Rhosse y gana puntos y premios. Usa mi número de socio '+c.p+' al registrarte y ganamos '+S.cfg.bonus.ref+' puntos cada uno 🍗')+'">Compartir por WhatsApp</a></div>'
+ +'<div class="card"><b>Historial</b><div class="ov"><table>'+c.h.slice(0,10).map(h=>'<tr><td>'+h.d+'</td><td>'+esc(h.note)+'</td><td>'+(h.pts>0?'+':'')+h.pts+'</td></tr>').join('')+'</table></div></div>'
+ +'<button class="btn" onclick="location.reload()">Salir</button>';
+ $('qr').innerHTML='';try{new QRCode($('qr'),{text:'GPR:'+c.p,width:170,height:170})}catch(e){$('qr').textContent='GPR:'+c.p}}
+function unlock(t){const v=$(t=='caja'?'pin':'pin2').value;if(v!=S.cfg.pin)return alert('PIN incorrecto');
+ $(t=='caja'?'lock':'lock2').classList.add('hide');$(t=='caja'?'cajaBody':'admBody').classList.remove('hide');if(t=='adm')admRender()}
+let cur=null;
+function find(){const p=$('cs').value.replace(/\D/g,'');cur=S.c[p];if(!cur){$('cust').innerHTML='<div class="card">Socio no encontrado. Pídele que se registre en "Mi tarjeta".</div>';return}cajaRender()}
+async function scan(){if(!('BarcodeDetector' in window))return alert('Tu navegador no soporta escaneo. Escribe el celular.');
+ const v=$('vid');v.classList.remove('hide');try{const st=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});v.srcObject=st;await v.play();const d=new BarcodeDetector({formats:['qr_code']});
+ const t=setInterval(async()=>{const r=await d.detect(v);if(r[0]&&r[0].rawValue.startsWith('GPR:')){clearInterval(t);st.getTracks().forEach(x=>x.stop());v.classList.add('hide');$('cs').value=r[0].rawValue.slice(4);find()}},400)}catch(e){alert('No se pudo abrir la cámara')}}
+function mult(line){const d=S.cfg.dd;return S.cfg.lines[line]*tier(cur)[2]*(new Date().getDay()==d.day?d.mult:1)}
+function cajaRender(){const c=cur,bday=c.b&&c.b.slice(5,7)==String(new Date().getMonth()+1).padStart(2,'0')&&!c.used[new Date().getFullYear()];
+ $('cust').innerHTML='<div class="card"><b>'+esc(c.n)+'</b> <span class="tier">'+tier(c)[0]+'</span><div class="pts">'+c.pts+' pts</div>'+bar(c)+(bday&&!basic()?'<div style="margin-top:8px"><button class="btn p" onclick="bonusB()">🎂 Entregar bono cumpleaños (+'+S.cfg.bonus.bday+')</button></div>':'')+'</div>'
+ +'<div class="card"><b>Registrar venta</b><div class="row"><div><label class="mu">Monto Bs</label><input id="am" type="number" min="0" oninput="prev()"></div><div><label class="mu">Negocio</label><select id="ln" onchange="prev()">'+Object.keys(S.cfg.lines).map(k=>'<option>'+k+'</option>').join('')+'</select></div></div><div id="pv" class="mu"></div><button class="btn p" onclick="sale()">Sumar puntos</button></div>'
+ +'<div class="card"><b>Canjear premio</b>'+S.cfg.rewards.map((r,i)=>'<div class="rw"><span>'+esc(r[0])+' · '+r[1]+' pts</span><button class="btn" '+(c.pts<r[1]?'disabled style="opacity:.4"':'')+' onclick="redeem('+i+')">Canjear</button></div>').join('')+'</div>'}
+function prev(){const a=+$('am').value||0;$('pv').textContent='Ganará '+Math.floor(a*S.cfg.ppb*mult($('ln').value))+' puntos'}
+function sale(){const a=+$('am').value;if(!(a>0))return;const l=$('ln').value,p=Math.floor(a*S.cfg.ppb*mult(l));add(cur,'venta',p,l+' Bs '+a);save();cajaRender()}
+function redeem(i){const r=S.cfg.rewards[i];if(cur.pts<r[1])return;if(!confirm('¿Canjear '+r[0]+'?'))return;add(cur,'canje',-r[1],'Canje: '+r[0]);save();cajaRender()}
+function bonusB(){cur.used[new Date().getFullYear()]=1;add(cur,'bono',S.cfg.bonus.bday,'Cumpleaños');save();cajaRender()}
+function admRender(){const cs=Object.values(S.c),tot=cs.reduce((a,c)=>a+c.pts,0);
+ $('admBody').innerHTML='<div class="card"><b>Resumen</b><div class="row"><div class="pts">'+cs.length+'<div class="mu">socios</div></div><div class="pts">'+tot+'<div class="mu">pts en circulación</div></div></div></div>'
+ +'<div class="card"><b>Reglas</b><div class="row"><div><label class="mu">Puntos por Bs</label><input id="a1" type="number" step=".1" value="'+S.cfg.ppb+'"></div><div><label class="mu">PIN</label><input id="a2" value="'+esc(S.cfg.pin)+'"></div></div>'
+ +'<div class="row"><div><label class="mu">Día de puntos dobles</label><select id="a3">'+DAYS.map((d,i)=>'<option value="'+i+'"'+(i==S.cfg.dd.day?' selected':'')+'>'+d+'</option>').join('')+'</select></div><div><label class="mu">Multiplicador</label><input id="a4" type="number" step=".5" value="'+S.cfg.dd.mult+'"></div></div>'
+ +'<label class="mu">Premios (nombre:puntos, uno por línea)</label><textarea id="a5" rows="5" style="width:100%;padding:8px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);color:var(--tx)">'+S.cfg.rewards.map(r=>r.join(':')).join('\n')+'</textarea>'
+ +'<label class="mu">Promociones (una por línea)</label><textarea id="a6" rows="3" style="width:100%;padding:8px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);color:var(--tx)">'+esc(S.cfg.promos.join('\n'))+'</textarea><button class="btn p" onclick="saveCfg()" style="margin-top:8px">Guardar reglas</button></div>'
+ +'<div class="card"><b>Socios</b><div class="ov"><table><tr><th>Nombre</th><th>Cel</th><th>Nivel</th><th>Pts</th></tr>'+cs.sort((a,b)=>b.life-a.life).map(c=>'<tr><td>'+esc(c.n)+'</td><td>'+c.p+'</td><td>'+tier(c)[0]+'</td><td>'+c.pts+'</td></tr>').join('')+'</table></div></div>'}
+function saveCfg(){const C=S.cfg;C.ppb=+$('a1').value||1;C.pin=$('a2').value||'1234';C.dd.day=+$('a3').value;C.dd.mult=+$('a4').value||2;
+ C.rewards=$('a5').value.split('\n').map(l=>l.split(':')).filter(a=>a[0]&&+a[1]).map(a=>[a[0].trim(),+a[1]]);C.promos=$('a6').value.split('\n').filter(x=>x.trim());bref().update({cfg:S.cfg});banner();alert('Guardado')}
+function brand(){document.title=BIZ.name;$('bn').innerHTML=(BIZ.logo?'<img src="'+esc(BIZ.logo)+'" style="height:36px;vertical-align:middle;border-radius:8px"> ':'')+esc(BIZ.name);$('bs').textContent='Club de clientes';
+ if(BIZ.color)document.documentElement.style.setProperty('--pr',BIZ.color);if(basic()){const st=document.createElement('style');st.textContent='.pro{display:none!important}';document.head.appendChild(st)}}
+function init(){
+ if(ADMIN){$('sa').classList.remove('hide');saInit();return}
+ if(!SLUG){$('sa').classList.remove('hide');$('sa').innerHTML='<div class="card">Entra con el enlace de tu negocio.</div>';return}
+ $('app').classList.remove('hide');
+ bref().onSnapshot(d=>{if(!d.exists){$('app').innerHTML='<div class="card">Negocio no encontrado.</div>';return}
+  BIZ=d.data();if(BIZ.active===false){$('app').innerHTML='<div class="card">Este servicio está suspendido. Contacta al administrador.</div>';return}
+  S.cfg=Object.assign({},DEF,BIZ.cfg||{});brand();banner()});
+ bref().collection('socios').onSnapshot(q=>{q.docChanges().forEach(ch=>{S.c[ch.doc.id]=ch.doc.data();snap[ch.doc.id]=JSON.stringify(S.c[ch.doc.id])});
+  if(me&&!$('mine').classList.contains('hide'))showMine();
+  if(cur&&!$('cajaBody').classList.contains('hide')){cur=S.c[cur.p];cajaRender()}
+  if(!$('admBody').classList.contains('hide'))admRender()})}
+function saLogin(){auth.signInWithEmailAndPassword($('se').value,$('sp').value).catch(()=>alert('Datos incorrectos'))}
+function saInit(){const m=$('sa');auth.onAuthStateChanged(u=>{
+ if(!u){m.innerHTML='<div class="card"><b>Panel del administrador</b><input id="se" type="email" placeholder="Correo"><input id="sp" type="password" placeholder="Contraseña"><button class="btn p" onclick="saLogin()">Entrar</button></div>';return}
+ m.innerHTML='<div class="card"><b>Nuevo negocio</b><input id="n1" placeholder="Nombre del negocio"><div class="row"><input id="n2" placeholder="Color" value="#d9480f"><select id="n3"><option value="basico">Plan básico (puntos y premios)</option><option value="pro">Plan pro (+ cumpleaños e invitados)</option></select></div><input id="n4" placeholder="Link del logo (opcional)"><input id="n5" placeholder="PIN del negocio" value="1234"><button class="btn p" onclick="saNew()">Crear negocio</button></div><div id="sl"></div><button class="btn" onclick="auth.signOut()">Salir</button>';
+ db.collection('negocios').onSnapshot(q=>{$('sl').innerHTML=q.docs.map(d=>{const b=d.data(),u=location.origin+location.pathname+'?n='+d.id;return '<div class="card"><b>'+esc(b.name)+'</b> <span class="mu">'+b.plan+(b.active===false?' · SUSPENDIDO':'')+'</span><div class="mu" style="word-break:break-all">'+u+'</div><button class="btn" onclick="navigator.clipboard.writeText(\''+u+'\')">Copiar link</button> <button class="btn" onclick="saTog(\''+d.id+'\','+(b.active===false)+')">'+(b.active===false?'Activar':'Suspender')+'</button></div>'}).join('')||'<div class="mu">Aún no hay negocios.</div>'})})}
+function saNew(){const n=$('n1').value.trim();if(!n)return;const slug=n.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+ const cfg=JSON.parse(JSON.stringify(DEF));cfg.pin=$('n5').value||'1234';
+ db.collection('negocios').doc(slug).set({name:n,slug,color:$('n2').value,logo:$('n4').value.trim(),plan:$('n3').value,active:true,cfg}).then(()=>{$('n1').value=''}).catch(()=>alert('No tienes permiso'))}
+function saTog(id,on){db.collection('negocios').doc(id).update({active:on})}
+init();
+</script></body></html>
