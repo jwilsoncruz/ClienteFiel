@@ -60,7 +60,7 @@ rewards:[['Refresco',100],['Hamburguesa',250],['Cuarto de pollo',400],['Medio po
 promos:['5% extra en tu cumpleaños: +100 pts todo el mes','Invita a un amigo: +100 pts para ambos'],bonus:{welcome:50,bday:100,ref:100}};
 /* ===== PEGA AQUÍ TU CONFIGURACIÓN DE FIREBASE ===== */
 const FB_CONFIG={apiKey:"AIzaSyDHZaPeYgfcpwvrJbm0HoaL_P380Dfwn-U",authDomain:"clientesfieles-92075.firebaseapp.com",projectId:"clientesfieles-92075",storageBucket:"clientesfieles-92075.firebasestorage.app",messagingSenderId:"876601108680",appId:"1:876601108680:web:25629d0456593b524dddfd"};
-firebase.initializeApp(FB_CONFIG);const db=firebase.firestore(),auth=firebase.auth();
+firebase.initializeApp(FB_CONFIG);const db=firebase.firestore(),auth=firebase.auth();db.settings({experimentalAutoDetectLongPolling:true,merge:true});
 const Q=new URLSearchParams(location.search),SLUG=(Q.get('n')||'').toLowerCase().replace(/[^a-z0-9-]/g,''),ADMIN=Q.has('admin');
 let S={cfg:DEF,c:{}},snap={},BIZ={};
 const bref=()=>db.collection('negocios').doc(SLUG),basic=()=>BIZ.plan==='basico';
@@ -133,7 +133,7 @@ function saInit(){const m=$('sa');auth.onAuthStateChanged(u=>{
  db.collection('negocios').onSnapshot(q=>{$('sl').innerHTML=q.docs.map(d=>{const b=d.data(),u=location.origin+location.pathname+'?n='+d.id;return '<div class="card"><b>'+esc(b.name)+'</b> <span class="mu">'+b.plan+(b.active===false?' · SUSPENDIDO':'')+'</span><div class="mu" style="word-break:break-all">'+u+'</div><button class="btn" onclick="navigator.clipboard.writeText(\''+u+'\')">Copiar link</button> <button class="btn" onclick="saTog(\''+d.id+'\','+(b.active===false)+')">'+(b.active===false?'Activar':'Suspender')+'</button></div>'}).join('')||'<div class="mu">Aún no hay negocios.</div>'})})}
 function saNew(){const n=$('n1').value.trim();if(!n)return;const slug=n.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
  const cfg=JSON.parse(JSON.stringify(DEF));cfg.pin=$('n5').value||'1234';
- db.collection('negocios').doc(slug).set({name:n,slug,color:$('n2').value,logo:$('n4').value.trim(),plan:$('n3').value,active:true,cfg}).then(()=>{$('n1').value=''}).catch(()=>alert('No tienes permiso'))}
+ db.collection('negocios').doc(slug).set({name:n,slug,color:$('n2').value,logo:$('n4').value.trim(),plan:$('n3').value,active:true,cfg}).then(()=>{$('n1').value='';alert('Negocio creado ✅')}).catch(e=>alert('Error: '+e.code+' - '+e.message));setTimeout(()=>{if($('n1').value)alert('Está tardando. Revisa tu internet y que la base Firestore exista en Firebase.')},8000)}
 function saTog(id,on){db.collection('negocios').doc(id).update({active:on})}
 init();
 </script></body></html>
