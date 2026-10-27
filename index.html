@@ -5,26 +5,37 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
-:root{--bg:#fff8f0;--card:#fff;--tx:#2b1a10;--mu:#7a6555;--pr:#d9480f;--ac:#f59f00;--bd:#ecd9c6;--ok:#2f9e44;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1c1410;--card:#2a1e17;--tx:#f7ece2;--mu:#bfa592;--pr:#ff7a3d;--ac:#ffc233;--bd:#43332a;--ok:#51cf66}}
-:root[data-theme="dark"]{--bg:#1c1410;--card:#2a1e17;--tx:#f7ece2;--mu:#bfa592;--pr:#ff7a3d;--ac:#ffc233;--bd:#43332a;--ok:#51cf66}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,Segoe UI,Roboto,sans-serif}
-main{max-width:760px;margin:0 auto;padding:14px}
-h1{font-size:22px;margin:4px 0}h2{font-size:17px;margin:18px 0 8px}
-.tabs{display:flex;gap:6px;margin:10px 0;flex-wrap:wrap}
-.tabs button,.btn{background:var(--card);color:var(--tx);border:1px solid var(--bd);border-radius:10px;padding:10px 14px;font:inherit;cursor:pointer}
-.tabs button.on,.btn.p{background:var(--pr);color:#fff;border-color:var(--pr)}
-.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin:10px 0}
-input,select{width:100%;padding:10px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx);font:inherit;margin:4px 0 8px}
+:root{--bg:#0e0b09;--card:#1a1512;--tx:#f5ecdf;--mu:#b3a38f;--pr:#d9480f;--ac:#d4af37;--bd:rgba(212,175,55,.22);--ok:#6fcf97;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(900px 520px at 50% -10%,#2c1f13 0%,var(--bg) 62%) fixed;color:var(--tx);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+main{max-width:760px;margin:0 auto;padding:16px}
+h1{font:600 26px/1.25 Georgia,'Times New Roman',serif;letter-spacing:.5px;margin:6px 0 2px;background:linear-gradient(90deg,#f3d98b,#d4af37 50%,#f3d98b);-webkit-background-clip:text;background-clip:text;color:transparent}
+#bs{letter-spacing:2.5px;text-transform:uppercase;font-size:11px;color:var(--ac)}
+h2{font:600 19px Georgia,serif;margin:18px 0 8px;color:#f3d98b}
+.tabs{display:flex;gap:6px;margin:14px 0;flex-wrap:wrap;background:#14100d;border:1px solid var(--bd);border-radius:14px;padding:5px}
+.tabs button{flex:1;background:transparent;color:var(--mu);border:0;border-radius:10px;padding:10px 14px;font:inherit;font-weight:600;cursor:pointer;transition:.2s}
+.tabs button.on{background:linear-gradient(135deg,#f3d98b,#c49a2c);color:#1a1208}
+.btn{background:#241c16;color:var(--tx);border:1px solid var(--bd);border-radius:12px;padding:10px 16px;font:inherit;font-weight:600;cursor:pointer;transition:.2s}
+.btn:hover{border-color:var(--ac)}
+.btn.p{background:linear-gradient(135deg,var(--pr),color-mix(in srgb,var(--pr) 55%,#000));color:#fff;border-color:transparent;box-shadow:0 4px 14px rgba(0,0,0,.4)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.card{background:linear-gradient(180deg,#1d1713,#16110e);border:1px solid var(--bd);border-radius:18px;padding:16px;margin:12px 0;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+.mcard{position:relative;overflow:hidden;background:linear-gradient(135deg,#33261a 0%,#16110e 55%,#2e2214 100%);border:1px solid rgba(212,175,55,.6);box-shadow:0 10px 34px rgba(0,0,0,.55)}
+.mcard::after{content:"";position:absolute;top:-80px;right:-60px;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,rgba(212,175,55,.22),transparent 65%);pointer-events:none}
+input,select,textarea{width:100%;padding:12px;border:1px solid var(--bd);border-radius:12px;background:#110d0b;color:var(--tx);font:inherit;font-size:16px;margin:4px 0 8px;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--ac);box-shadow:0 0 0 3px rgba(212,175,55,.18)}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.pts{font-size:38px;font-weight:800;color:var(--pr)}
-.bar{height:10px;background:var(--bd);border-radius:9px;overflow:hidden}.bar i{display:block;height:100%;background:var(--ac)}
-.tier{display:inline-block;padding:3px 10px;border-radius:99px;background:var(--ac);color:#000;font-weight:700;font-size:13px}
-.rw{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bd)}
+.pts{font:700 42px/1.1 Georgia,serif;background:linear-gradient(135deg,#f3d98b,#d4af37 60%,#b8902a);-webkit-background-clip:text;background-clip:text;color:transparent}
+.bar{height:8px;background:#2a2119;border-radius:9px;overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;background:linear-gradient(90deg,#b8902a,#f3d98b);box-shadow:0 0 10px rgba(212,175,55,.6)}
+.tier{display:inline-block;padding:3px 12px;border-radius:99px;background:linear-gradient(135deg,#f3d98b,#c49a2c);color:#1a1208;font-weight:700;font-size:12px;letter-spacing:.5px;text-transform:uppercase}
+.rw{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--bd)}
 .mu{color:var(--mu);font-size:13px}.ok{color:var(--ok)}.hide{display:none}
-.ov{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:6px;border-bottom:1px solid var(--bd);text-align:left;white-space:nowrap}
-#qr{display:flex;justify-content:center;background:#fff;padding:12px;border-radius:12px;width:max-content;margin:8px auto}
-.banner{background:linear-gradient(135deg,var(--pr),var(--ac));color:#fff;border-radius:14px;padding:14px}
+.ov{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:7px;border-bottom:1px solid var(--bd);text-align:left;white-space:nowrap}th{color:var(--ac);font-weight:600}
+#qr{display:flex;justify-content:center;background:#fff;padding:14px;border-radius:16px;width:max-content;margin:12px auto;border:3px solid var(--ac);box-shadow:0 0 22px rgba(212,175,55,.3)}
+.banner{background:linear-gradient(120deg,var(--pr),color-mix(in srgb,var(--pr) 35%,#000));color:#fff;border-radius:16px;padding:14px 16px;border:1px solid rgba(255,255,255,.12);box-shadow:0 6px 20px rgba(0,0,0,.4)}
+hr{border:0;border-top:1px solid var(--bd)}
+input,select,textarea{font-size:16px}
+@media(max-width:520px){.row{grid-template-columns:1fr}main{padding:12px}.btn,.tabs button{padding:12px 14px}.tabs button{flex:1}.pts{font-size:34px}h1{font-size:22px}}
 </style></head><body><main>
 <h1 id="bn">Club de clientes</h1><div class="mu" id="bs"></div><section id="sa" class="hide"></section><div id="app" class="hide">
 <div class="banner" id="promoBan" style="margin-top:10px"></div>
@@ -84,7 +95,7 @@ function openMe(p){me=p;if(unsubMe)unsubMe();unsubMe=bref().collection('socios')
 function bar(c){const n=nextT(c);return n?'<div class="bar"><i style="width:'+Math.min(100,(c.life-tier(c)[1])/(n[1]-tier(c)[1])*100)+'%"></i></div><div class="mu">Te faltan '+(n[1]-c.life)+' pts para nivel '+n[0]+'</div>':'<div class="mu">¡Nivel máximo! 👑</div>'}
 function showMine(){const c=S.c[me];$('reg').classList.add('hide');const m=$('mine');m.classList.remove('hide');
  const bd=c.b&&c.b.slice(5)==new Date().toISOString().slice(5,7)+'' ? '':'';
- m.innerHTML='<div class="card"><div style="display:flex;justify-content:space-between"><b>'+esc(c.n)+'</b><span class="tier">'+tier(c)[0]+' ×'+tier(c)[2]+'</span></div><div class="pts">'+c.pts+' <small style="font-size:15px">puntos</small></div>'+bar(c)+'<div id="qr"></div><div class="mu" style="text-align:center">Muestra este QR en caja · Socio '+c.p+'<br>Haz captura de pantalla para guardarlo</div></div>'
+ m.innerHTML='<div class="card mcard"><div class="mu" style="letter-spacing:2px;text-transform:uppercase;font-size:11px;color:var(--ac)">Socio · '+c.p+'</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px"><b style="font:600 20px Georgia,serif">'+esc(c.n)+'</b><span class="tier">'+tier(c)[0]+' ×'+tier(c)[2]+'</span></div><div class="pts">'+c.pts+' <small style="font-size:15px">puntos</small></div>'+bar(c)+'<div id="qr"></div><div class="mu" style="text-align:center">Muestra este QR en caja · Socio '+c.p+'<br>Haz captura de pantalla para guardarlo</div></div>'
  +extraCard(c)+'<div class="card"><b>🎁 Premios</b>'+S.cfg.rewards.map(r=>'<div class="rw"><span>'+esc(r[0])+'</span><span class="'+(c.pts>=r[1]?'ok':'mu')+'">'+r[1]+' pts '+(c.pts>=r[1]?'✓ disponible':'')+'</span></div>').join('')+'</div>'
  +'<div class="card pro"><b>👥 Invita y gana</b><div class="mu">Tu amigo pone tu celular ('+c.p+') al registrarse y ambos ganan '+S.cfg.bonus.ref+' pts.</div><a class="btn" style="display:inline-block;margin-top:8px;text-decoration:none" target="_blank" href="https://wa.me/?text='+encodeURIComponent('Únete al Club Rhosse de Go Pollos Rhosse y gana puntos y premios. Usa mi número de socio '+c.p+' al registrarte y ganamos '+S.cfg.bonus.ref+' puntos cada uno 🍗')+'">Compartir por WhatsApp</a></div>'
  +'<div class="card"><b>Historial</b><div class="ov"><table>'+c.h.slice(0,10).map(h=>'<tr><td>'+h.d+'</td><td>'+esc(h.note)+'</td><td>'+(h.pts>0?'+':'')+h.pts+'</td></tr>').join('')+'</table></div></div>'
@@ -132,7 +143,7 @@ function giveCp(c,n,days){ens(c);c.cp.push({id:Date.now()+Math.random().toString
 function extras(a){ens(cur);const sc=S.cfg.stamp;if(a>=sc.min){cur.st++;if(cur.st>=sc.goal){cur.st=0;giveCp(cur,sc.prize,sc.days)}}if(a>=S.cfg.wheel.min)cur.spins++}
 function saveX(){if(!$('x1'))return;const C=S.cfg;C.stamp={goal:+$('x1').value||8,min:+$('x2').value||30,prize:$('x3').value||'Premio',days:+$('x4').value||30};
  const pr=$('x7').value.split('\n').map(l=>l.split('|')).filter(a=>a[0]&&a[1]).map(a=>({n:a[0].trim(),t:a[1].trim(),v:+a[2]||0,w:+a[3]||1}));C.wheel={min:+$('x5').value||50,days:+$('x6').value||15,prizes:pr.length?pr:DEF.wheel.prizes}}
-function extraCard(c){ens(c);const g=S.cfg.stamp.goal,L=live(c);let t='';for(let i=0;i<g;i++)t+='<span style="display:inline-flex;width:34px;height:34px;margin:3px;border-radius:50%;align-items:center;justify-content:center;border:2px dashed var(--pr);'+(i<c.st?'background:var(--pr);border-style:solid':'')+'">'+(i<c.st?'🍗':'')+'</span>';
+function extraCard(c){ens(c);const g=S.cfg.stamp.goal,L=live(c);let t='';for(let i=0;i<g;i++)t+='<span style="display:inline-flex;width:34px;height:34px;margin:3px;border-radius:50%;align-items:center;justify-content:center;border:2px dashed var(--ac);'+(i<c.st?'background:linear-gradient(135deg,#f3d98b,#b8902a);border-style:solid;box-shadow:0 0 8px rgba(212,175,55,.5)':'')+'">'+(i<c.st?'🍗':'')+'</span>';
  return '<div class="card pro"><b>🍗 Tarjeta de sellos</b><div>'+t+'</div><div class="mu">Cada compra desde Bs '+S.cfg.stamp.min+' da 1 sello. Con '+g+' sellos ganas: '+esc(S.cfg.stamp.prize)+'</div>'
  +(c.spins?'<div class="ok" style="margin-top:6px"><b>🎡 Tienes '+c.spins+' giro(s) de ruleta: pídelo en caja</b></div>':'')
  +'<b style="display:block;margin-top:10px">🎟️ Mis cupones</b>'+(L.length?L.map(k=>'<div class="rw"><span>'+esc(k.n)+'</span><span class="mu">vence '+k.exp+'</span></div>').join(''):'<div class="mu">Aún no tienes cupones</div>')+'</div>'}
@@ -146,11 +157,11 @@ function addSt(){const n=Math.floor(+$('sn').value);if(!(n>0)||n>50)return alert
  add(cur,'sellos',0,'Sellos anteriores agregados: '+n+(gan?' · cupones ganados: '+gan:''));save();cajaRender()}
 function manCp(){const n=$('cn').value.trim();if(!n)return;giveCp(cur,n,+$('cd').value||15);save();cajaRender()}
 function spin(){if(cur.spins<1)return;const P=S.cfg.wheel.prizes,tot=P.reduce((a,p)=>a+p.w,0);let r=Math.random()*tot,i=0;for(;i<P.length-1;i++){r-=P[i].w;if(r<0)break}
- const seg=360/P.length,ang=1800+(360-(i*seg+seg/2)),cols=['#d9480f','#f59f00','#2f9e44','#1971c2','#9c36b5','#e03131'],p=P[i];
- $('wh').innerHTML='<div style="position:relative;width:200px;height:200px;margin:16px auto"><div style="position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:24px;z-index:2">▼</div><div id="wd" style="width:200px;height:200px;border-radius:50%;background:conic-gradient('+P.map((q,k)=>cols[k%6]+' '+k*seg+'deg '+(k+1)*seg+'deg').join(',')+');transition:transform 3.5s cubic-bezier(.2,.8,.2,1)"></div></div><div class="mu">'+P.map((q,k)=>'<span style="color:'+cols[k%6]+'">■</span> '+esc(q.n)).join(' · ')+'</div>';
+ const seg=360/P.length,ang=1800+(360-(i*seg+seg/2)),cols=['#b8902a','#7a1f2b','#d4af37','#3b2a1e','#9c6b1f','#5a1620'],p=P[i];
+ $('wh').innerHTML='<div style="position:relative;width:200px;height:200px;margin:16px auto"><div style="position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:24px;z-index:2">▼</div><div id="wd" style="width:200px;height:200px;border-radius:50%;border:6px solid #d4af37;box-shadow:0 0 24px rgba(212,175,55,.35);background:conic-gradient('+P.map((q,k)=>cols[k%6]+' '+k*seg+'deg '+(k+1)*seg+'deg').join(',')+');transition:transform 3.5s cubic-bezier(.2,.8,.2,1)"></div></div><div class="mu">'+P.map((q,k)=>'<span style="color:'+cols[k%6]+'">■</span> '+esc(q.n)).join(' · ')+'</div>';
  cur.spins--;requestAnimationFrame(()=>requestAnimationFrame(()=>{const d=$('wd');if(d)d.style.transform='rotate('+ang+'deg)'}));
  setTimeout(()=>{if(p.t=='pts')add(cur,'bono',p.v,'Ruleta: '+p.n);else if(p.t=='cp')giveCp(cur,p.n,S.cfg.wheel.days);else add(cur,'ruleta',0,'Ruleta: '+p.n);save();cajaRender();$('wh').innerHTML='<div class="pts" style="font-size:26px;text-align:center">🎉 '+esc(p.n)+'</div>'},3800)}
-function brand(){document.title=BIZ.name;$('bn').innerHTML=(BIZ.logo?'<img src="'+esc(BIZ.logo)+'" style="height:36px;vertical-align:middle;border-radius:8px"> ':'')+esc(BIZ.name);$('bs').textContent='Club de clientes'+(BIZ.hasta?' · demo hasta '+BIZ.hasta:'');
+function brand(){document.title=BIZ.name;$('bn').innerHTML=(BIZ.logo?'<img src="'+esc(BIZ.logo)+'" style="height:46px;width:46px;object-fit:cover;vertical-align:middle;border-radius:50%;border:2px solid #d4af37;margin-right:8px"> ':'')+esc(BIZ.name);$('bs').textContent='Club de clientes'+(BIZ.hasta?' · demo hasta '+BIZ.hasta:'');
  if(BIZ.color)document.documentElement.style.setProperty('--pr',BIZ.color);if(basic()){const st=document.createElement('style');st.textContent='.pro{display:none!important}';document.head.appendChild(st)}}
 function init(){
  if(ADMIN){$('sa').classList.remove('hide');saInit();return}
