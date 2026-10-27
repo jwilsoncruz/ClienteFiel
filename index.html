@@ -71,7 +71,7 @@ input,select,textarea{font-size:16px}
 const KEY='rhosse_club_v1',TIERS=[['Bronce',0,1],['Plata',1000,1.1],['Oro',3000,1.25],['Diamante',8000,1.5]];
 const DEF={ppb:1,lines:{Venta:1},dd:{day:2,mult:2,name:'Martes doble de puntos'},
 rewards:[['Refresco',100],['Hamburguesa',250],['Cuarto de pollo',400],['Medio pollo',800],['Pollo entero',1600]],
-promos:['5% extra en tu cumpleaños: +100 pts todo el mes','Invita a un amigo: +100 pts para ambos'],bonus:{welcome:50,bday:100,ref:100},stamp:{icon:'⭐',goal:8,min:30,prize:'Cuarto de pollo gratis',days:30},wheel:{min:50,days:15,prizes:[{n:'+20 puntos',t:'pts',v:20,w:30},{n:'Refresco gratis',t:'cp',v:0,w:15},{n:'10% de descuento',t:'cp',v:0,w:20},{n:'Sigue participando',t:'none',v:0,w:35}]}};
+promos:['🎂 Cumpleaños: +100 puntos en tu mes','👥 Invita a un amigo: +100 puntos para ambos'],bonus:{welcome:50,bday:100,ref:100},stamp:{icon:'⭐',goal:8,min:30,prize:'Cuarto de pollo gratis',days:30},wheel:{min:50,days:15,prizes:[{n:'+20 puntos',t:'pts',v:20,w:30},{n:'Refresco gratis',t:'cp',v:0,w:15},{n:'10% de descuento',t:'cp',v:0,w:20},{n:'Sigue participando',t:'none',v:0,w:35}]}};
 /* ===== PEGA AQUÍ TU CONFIGURACIÓN DE FIREBASE ===== */
 const FB_CONFIG={apiKey:"AIzaSyDHZaPeYgfcpwvrJbm0HoaL_P380Dfwn-U",authDomain:"clientesfieles-92075.firebaseapp.com",projectId:"clientesfieles-92075",storageBucket:"clientesfieles-92075.firebasestorage.app",messagingSenderId:"876601108680",appId:"1:876601108680:web:25629d0456593b524dddfd"};
 firebase.initializeApp(FB_CONFIG);const db=firebase.firestore(),auth=firebase.auth();db.settings({experimentalAutoDetectLongPolling:true,merge:true});
@@ -86,7 +86,7 @@ const nextT=c=>TIERS.find(t=>t[1]>c.life);
 const esc=s=>String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
 let me=null;
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x==b));['card','caja','adm'].forEach(s=>$(s).classList.toggle('hide',s!=b.dataset.t))});
-function banner(){const d=S.cfg.dd,t=new Date().getDay()==d.day;$('promoBan').innerHTML='<b>'+(t?'🔥 HOY: '+esc(d.name)+' (x'+d.mult+')':'📅 '+esc(d.name)+': todos los '+DAYS[d.day].toLowerCase()+'s')+'</b><div style="font-size:13px;margin-top:4px">'+S.cfg.promos.map(esc).join(' · ')+'</div>'}
+function banner(){const d=S.cfg.dd,t=new Date().getDay()==d.day;$('promoBan').innerHTML='<b>'+(t?'🔥 HOY: puntos x'+d.mult+' en todas tus compras':'📅 Puntos x'+d.mult+' todos los '+DAYS[d.day].toLowerCase()+'s')+'</b><div style="font-size:13px;margin-top:4px">'+S.cfg.promos.map(esc).join(' · ')+'</div>'}
 function add(c,type,pts,note){c.pts+=pts;if(pts>0&&type!='canje')c.life+=pts;c.h.unshift({d:new Date().toLocaleString('es-BO'),type,pts,note});c.h=c.h.slice(0,60)}
 let unsubMe=null;
 async function reg(){const n=$('rn').value.trim(),p=$('rp').value.replace(/\D/g,'');if(!n||p.length<7)return alert('Escribe tu nombre y un celular válido');
