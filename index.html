@@ -40,7 +40,7 @@ input,select{width:100%;padding:10px;border:1px solid var(--bd);border-radius:10
 </section>
 
 <section id="caja" class="hide">
- <div class="card" id="lock"><b>Acceso del personal</b><input id="em1" type="email" placeholder="Correo"><input id="pw1" type="password" placeholder="Contraseña"><button class="btn p" onclick="staffLogin('1')">Entrar</button></div>
+ <div class="card" id="lock"><b>Acceso del personal</b><input id="em1" type="email" placeholder="Correo"><input id="pw1" type="password" placeholder="Contraseña"><button class="btn p" onclick="staffLogin('1')">Entrar</button><button class="btn" style="margin-left:6px" onclick="gLogin()">Entrar con Google</button></div>
  <div id="cajaBody" class="hide">
   <div class="card"><b>Buscar socio</b><input id="cs" type="tel" placeholder="Celular o escanea el QR">
    <div style="display:flex;gap:8px"><button class="btn p" onclick="find()">Buscar</button><button class="btn" onclick="scan()">📷 Escanear QR</button></div><video id="vid" class="hide" style="width:100%;border-radius:10px;margin-top:8px" playsinline></video></div>
@@ -49,7 +49,7 @@ input,select{width:100%;padding:10px;border:1px solid var(--bd);border-radius:10
 </section>
 
 <section id="adm" class="hide">
- <div class="card" id="lock2"><b>Acceso del dueño</b><input id="em2" type="email" placeholder="Correo"><input id="pw2" type="password" placeholder="Contraseña"><button class="btn p" onclick="staffLogin('2')">Entrar</button></div>
+ <div class="card" id="lock2"><b>Acceso del dueño</b><input id="em2" type="email" placeholder="Correo"><input id="pw2" type="password" placeholder="Contraseña"><button class="btn p" onclick="staffLogin('2')">Entrar</button><button class="btn" style="margin-left:6px" onclick="gLogin()">Entrar con Google</button></div>
  <div id="admBody" class="hide"></div>
 </section>
 </div></main>
@@ -117,6 +117,7 @@ function admRender(){const cs=Object.values(S.c),tot=cs.reduce((a,c)=>a+c.pts,0)
  +'<div class="card"><b>Socios</b><div class="ov"><table><tr><th>Nombre</th><th>Cel</th><th>Nivel</th><th>Pts</th></tr>'+cs.sort((a,b)=>b.life-a.life).map(c=>'<tr><td>'+esc(c.n)+'</td><td>'+c.p+'</td><td>'+tier(c)[0]+'</td><td>'+c.pts+'</td></tr>').join('')+'</table></div></div>'}
 async function refBonus(){if(!cur.ref||cur.refPaid)return;try{const d=await bref().collection('socios').doc(cur.ref).get();if(!d.exists)return;const r=d.data();ens(r);add(r,'bono',S.cfg.bonus.ref,'Invitaste a '+cur.n);add(cur,'bono',S.cfg.bonus.ref,'Invitado por '+r.n);cur.refPaid=true;S.c[r.p]=r;snap[r.p]='';save()}catch(e){}}
 const SA='jwilsoncruz@gmail.com';
+function gLogin(){auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(e=>alert(({'auth/operation-not-allowed':'Primero activa Google en Authentication > Método de acceso','auth/unauthorized-domain':'Agrega este dominio en Authentication > Configuración > Dominios autorizados','auth/popup-closed-by-user':'Cerraste la ventana de Google','auth/popup-blocked':'El navegador bloqueó la ventana: permite ventanas emergentes'})[e.code]||('Error: '+e.code)))}
 function staffLogin(k){auth.signInWithEmailAndPassword($('em'+k).value,$('pw'+k).value).catch(()=>alert('Correo o contraseña incorrectos'))}
 async function applyRole(u){let rol=null;if(u){if(u.email===SA)rol='dueno';else{try{const d=await bref().collection('staff').doc(u.uid).get();if(d.exists)rol=d.data().rol}catch(e){}}}
  const cj=!!rol,ad=rol==='dueno';$('lock').classList.toggle('hide',cj);$('cajaBody').classList.toggle('hide',!cj);$('lock2').classList.toggle('hide',ad);$('admBody').classList.toggle('hide',!ad);$('out').classList.toggle('hide',!u);
@@ -161,7 +162,7 @@ function init(){
  auth.onAuthStateChanged(applyRole)}
 function saLogin(){auth.signInWithEmailAndPassword($('se').value,$('sp').value).catch(e=>alert(({'auth/invalid-credential':'Correo o contraseña incorrectos','auth/wrong-password':'Contraseña incorrecta','auth/user-not-found':'Ese correo no existe en Authentication','auth/invalid-email':'El correo no es válido','auth/unauthorized-domain':'Dominio no autorizado: agrégalo en Authentication > Configuración > Dominios autorizados','auth/api-key-not-valid.-please-pass-a-valid-api-key.':'La apiKey de FB_CONFIG es incorrecta','auth/operation-not-allowed':'El método correo/contraseña no está activado','auth/too-many-requests':'Demasiados intentos, espera unos minutos'})[e.code]||('Error: '+e.code)))}
 function saInit(){const m=$('sa');auth.onAuthStateChanged(u=>{
- if(!u){m.innerHTML='<div class="card"><b>Panel del administrador</b><input id="se" type="email" placeholder="Correo"><input id="sp" type="password" placeholder="Contraseña"><button class="btn p" onclick="saLogin()">Entrar</button></div>';return}
+ if(!u){m.innerHTML='<div class="card"><b>Panel del administrador</b><input id="se" type="email" placeholder="Correo"><input id="sp" type="password" placeholder="Contraseña"><button class="btn p" onclick="saLogin()">Entrar</button><button class="btn" style="margin-left:6px" onclick="gLogin()">Entrar con Google</button></div>';return}
  m.innerHTML='<div class="card"><b>Nuevo negocio (v3)</b><input id="n1" placeholder="Nombre del negocio"><div class="row"><input id="n2" placeholder="Color" value="#d9480f"><select id="n3"><option value="basico">Plan básico (puntos y premios)</option><option value="pro">Plan pro (+ cumpleaños e invitados)</option></select></div><input id="n4" placeholder="Link del logo (opcional)"><label class="mu">Fecha de fin de demo o promoción (opcional)</label><input id="n6" type="date"><button class="btn p" onclick="saNew()">Crear negocio</button><div id="st" style="margin-top:8px;font-weight:600"></div></div><div id="sl"></div><button class="btn" onclick="auth.signOut()">Salir</button>';
  db.collection('negocios').onSnapshot(q=>{$('sl').innerHTML=q.docs.map(d=>{const b=d.data(),u=location.origin+location.pathname+'?n='+d.id;return '<div class="card"><b>'+esc(b.name)+'</b> <span class="mu">'+b.plan+(b.active===false?' · SUSPENDIDO':'')+(b.hasta?' · fin '+b.hasta+(b.hasta<addDays(0)?' (VENCIDO)':''):'')+'</span><div class="mu" style="word-break:break-all">'+u+'</div><button class="btn" onclick="navigator.clipboard.writeText(\''+u+'\')">Copiar link</button> <button class="btn" onclick="saTog(\''+d.id+'\','+(b.active===false)+')">'+(b.active===false?'Activar':'Suspender')+'</button><div class="row" style="margin-top:8px"><input id="h_'+d.id+'" type="date" value="'+(b.hasta||'')+'"><button class="btn" onclick="saHasta(\''+d.id+'\')">Guardar fecha fin</button></div><div class="row" style="margin-top:8px"><input id="u_'+d.id+'" placeholder="UID del empleado"><select id="r_'+d.id+'"><option value="caja">Cajero</option><option value="dueno">Dueño</option></select></div><button class="btn" onclick="saStaff(\''+d.id+'\')">Dar acceso</button></div>'}).join('')||'<div class="mu">Aún no hay negocios.</div>'})})}
 function st(t){const e=$('st');if(e)e.textContent=t}
