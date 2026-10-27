@@ -2,7 +2,6 @@
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Club de clientes</title>
-<link rel="icon" href="clubnocturno.png">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
@@ -29,7 +28,7 @@ input,select{width:100%;padding:10px;border:1px solid var(--bd);border-radius:10
 </style></head><body><main>
 <h1 id="bn">Club de clientes</h1><div class="mu" id="bs"></div><section id="sa" class="hide"></section><div id="app" class="hide">
 <div class="banner" id="promoBan" style="margin-top:10px"></div>
-<div class="tabs"><button class="on" data-t="card">Mi tarjeta</button><button data-t="caja">Caja</button><button data-t="adm">Admin</button></div>
+<div class="tabs"><button class="on" data-t="card">Mi tarjeta</button><button data-t="caja">Caja</button><button data-t="adm">Admin</button></div><button class="btn hide" id="out" onclick="auth.signOut()">Cerrar sesión del personal</button>
 
 <section id="card">
  <div class="card" id="reg"><h2 style="margin-top:0">Únete y gana 50 puntos</h2>
@@ -41,7 +40,7 @@ input,select{width:100%;padding:10px;border:1px solid var(--bd);border-radius:10
 </section>
 
 <section id="caja" class="hide">
- <div class="card" id="lock"><b>Acceso del personal</b><input id="pin" type="password" placeholder="PIN"><button class="btn p" onclick="unlock('caja')">Entrar</button></div>
+ <div class="card" id="lock"><b>Acceso del personal</b><input id="em1" type="email" placeholder="Correo"><input id="pw1" type="password" placeholder="Contraseña"><button class="btn p" onclick="staffLogin('1')">Entrar</button></div>
  <div id="cajaBody" class="hide">
   <div class="card"><b>Buscar socio</b><input id="cs" type="tel" placeholder="Celular o escanea el QR">
    <div style="display:flex;gap:8px"><button class="btn p" onclick="find()">Buscar</button><button class="btn" onclick="scan()">📷 Escanear QR</button></div><video id="vid" class="hide" style="width:100%;border-radius:10px;margin-top:8px" playsinline></video></div>
@@ -50,13 +49,13 @@ input,select{width:100%;padding:10px;border:1px solid var(--bd);border-radius:10
 </section>
 
 <section id="adm" class="hide">
- <div class="card" id="lock2"><b>Acceso del dueño</b><input id="pin2" type="password" placeholder="PIN"><button class="btn p" onclick="unlock('adm')">Entrar</button></div>
+ <div class="card" id="lock2"><b>Acceso del dueño</b><input id="em2" type="email" placeholder="Correo"><input id="pw2" type="password" placeholder="Contraseña"><button class="btn p" onclick="staffLogin('2')">Entrar</button></div>
  <div id="admBody" class="hide"></div>
 </section>
 </div></main>
 <script>
 const KEY='rhosse_club_v1',TIERS=[['Bronce',0,1],['Plata',1000,1.1],['Oro',3000,1.25],['Diamante',8000,1.5]];
-const DEF={pin:'1234',ppb:1,lines:{Venta:1},dd:{day:2,mult:2,name:'Martes doble de puntos'},
+const DEF={ppb:1,lines:{Venta:1},dd:{day:2,mult:2,name:'Martes doble de puntos'},
 rewards:[['Refresco',100],['Hamburguesa',250],['Cuarto de pollo',400],['Medio pollo',800],['Pollo entero',1600]],
 promos:['5% extra en tu cumpleaños: +100 pts todo el mes','Invita a un amigo: +100 pts para ambos'],bonus:{welcome:50,bday:100,ref:100},stamp:{goal:8,min:30,prize:'Cuarto de pollo gratis',days:30},wheel:{min:50,days:15,prizes:[{n:'+20 puntos',t:'pts',v:20,w:30},{n:'Refresco gratis',t:'cp',v:0,w:15},{n:'10% de descuento',t:'cp',v:0,w:20},{n:'Sigue participando',t:'none',v:0,w:35}]}};
 /* ===== PEGA AQUÍ TU CONFIGURACIÓN DE FIREBASE ===== */
@@ -75,12 +74,13 @@ let me=null;
 document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tabs button').forEach(x=>x.classList.toggle('on',x==b));['card','caja','adm'].forEach(s=>$(s).classList.toggle('hide',s!=b.dataset.t))});
 function banner(){const d=S.cfg.dd,t=new Date().getDay()==d.day;$('promoBan').innerHTML='<b>'+(t?'🔥 HOY: '+esc(d.name)+' (x'+d.mult+')':'📅 '+esc(d.name)+': todos los '+DAYS[d.day].toLowerCase()+'s')+'</b><div style="font-size:13px;margin-top:4px">'+S.cfg.promos.map(esc).join(' · ')+'</div>'}
 function add(c,type,pts,note){c.pts+=pts;if(pts>0&&type!='canje')c.life+=pts;c.h.unshift({d:new Date().toLocaleString('es-BO'),type,pts,note});c.h=c.h.slice(0,60)}
-function reg(){const n=$('rn').value.trim(),p=$('rp').value.replace(/\D/g,'');if(!n||p.length<7)return alert('Escribe tu nombre y un celular válido');
- if(S.c[p])return alert('Ese celular ya es socio. Usa "Ver mi tarjeta".');
- const c={n,p,b:$('rb').value,pts:0,life:0,h:[],ref:'',used:{}};add(c,'bono',S.cfg.bonus.welcome,'Bienvenida');
- const r=$('rr').value.replace(/\D/g,'');if(r&&S.c[r]&&r!=p){c.ref=r;add(c,'bono',S.cfg.bonus.ref,'Invitado por '+S.c[r].n);add(S.c[r],'bono',S.cfg.bonus.ref,'Invitaste a '+n)}
- S.c[p]=c;save();me=p;showMine()}
-function login(){const p=$('lp').value.replace(/\D/g,'');if(!S.c[p])return alert('No encontramos ese celular. Regístrate arriba.');me=p;showMine()}
+let unsubMe=null;
+async function reg(){const n=$('rn').value.trim(),p=$('rp').value.replace(/\D/g,'');if(!n||p.length<7)return alert('Escribe tu nombre y un celular válido');
+ try{const ex=await bref().collection('socios').doc(p).get();if(ex.exists)return alert('Ese celular ya es socio. Usa "Ver mi tarjeta".');
+ const r=$('rr').value.replace(/\D/g,'');const c={n,p,b:$('rb').value,pts:0,life:0,h:[],ref:r&&r!=p?r:'',refPaid:false,used:{},st:0,spins:0,cp:[]};
+ add(c,'bono',50,'Bienvenida');await bref().collection('socios').doc(p).set(c);S.c[p]=c;snap[p]=JSON.stringify(c);openMe(p)}catch(e){alert('No se pudo registrar: '+e.code)}}
+function login(){const p=$('lp').value.replace(/\D/g,'');bref().collection('socios').doc(p).get().then(d=>{if(!d.exists)return alert('No encontramos ese celular. Regístrate arriba.');openMe(p)}).catch(()=>alert('No se pudo consultar'))}
+function openMe(p){me=p;if(unsubMe)unsubMe();unsubMe=bref().collection('socios').doc(p).onSnapshot(d=>{if(d.exists){S.c[p]=d.data();snap[p]=JSON.stringify(d.data());showMine()}})}
 function bar(c){const n=nextT(c);return n?'<div class="bar"><i style="width:'+Math.min(100,(c.life-tier(c)[1])/(n[1]-tier(c)[1])*100)+'%"></i></div><div class="mu">Te faltan '+(n[1]-c.life)+' pts para nivel '+n[0]+'</div>':'<div class="mu">¡Nivel máximo! 👑</div>'}
 function showMine(){const c=S.c[me];$('reg').classList.add('hide');const m=$('mine');m.classList.remove('hide');
  const bd=c.b&&c.b.slice(5)==new Date().toISOString().slice(5,7)+'' ? '':'';
@@ -93,7 +93,8 @@ function showMine(){const c=S.c[me];$('reg').classList.add('hide');const m=$('mi
 function unlock(t){const v=$(t=='caja'?'pin':'pin2').value;if(v!=S.cfg.pin)return alert('PIN incorrecto');
  $(t=='caja'?'lock':'lock2').classList.add('hide');$(t=='caja'?'cajaBody':'admBody').classList.remove('hide');if(t=='adm')admRender()}
 let cur=null;
-function find(){const p=$('cs').value.replace(/\D/g,'');cur=S.c[p];if(!cur){$('cust').innerHTML='<div class="card">Socio no encontrado. Pídele que se registre en "Mi tarjeta".</div>';return}cajaRender()}
+async function find(){const p=$('cs').value.replace(/\D/g,'');try{const d=await bref().collection('socios').doc(p).get();cur=d.exists?d.data():null}catch(e){cur=null}
+ if(!cur){$('cust').innerHTML='<div class="card">Socio no encontrado. Pídele que se registre en "Mi tarjeta".</div>';return}S.c[p]=cur;snap[p]=JSON.stringify(cur);cajaRender()}
 async function scan(){if(!('BarcodeDetector' in window))return alert('Tu navegador no soporta escaneo. Escribe el celular.');
  const v=$('vid');v.classList.remove('hide');try{const st=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});v.srcObject=st;await v.play();const d=new BarcodeDetector({formats:['qr_code']});
  const t=setInterval(async()=>{const r=await d.detect(v);if(r[0]&&r[0].rawValue.startsWith('GPR:')){clearInterval(t);st.getTracks().forEach(x=>x.stop());v.classList.add('hide');$('cs').value=r[0].rawValue.slice(4);find()}},400)}catch(e){alert('No se pudo abrir la cámara')}}
@@ -103,18 +104,26 @@ function cajaRender(){const c=cur,bday=c.b&&c.b.slice(5,7)==String(new Date().ge
  +cajaExtra(c)+'<div class="card"><b>Registrar venta</b><div class="row"><div><label class="mu">Monto Bs</label><input id="am" type="number" min="0" oninput="prev()"></div><div><label class="mu">Negocio</label><select id="ln" onchange="prev()">'+Object.keys(S.cfg.lines).map(k=>'<option>'+k+'</option>').join('')+'</select></div></div><div id="pv" class="mu"></div><button class="btn p" onclick="sale()">Sumar puntos</button></div>'
  +'<div class="card"><b>Canjear premio</b>'+S.cfg.rewards.map((r,i)=>'<div class="rw"><span>'+esc(r[0])+' · '+r[1]+' pts</span><button class="btn" '+(c.pts<r[1]?'disabled style="opacity:.4"':'')+' onclick="redeem('+i+')">Canjear</button></div>').join('')+'</div>'}
 function prev(){const a=+$('am').value||0;$('pv').textContent='Ganará '+Math.floor(a*S.cfg.ppb*mult($('ln').value))+' puntos'}
-function sale(){const a=+$('am').value;if(!(a>0))return;const l=$('ln').value,p=Math.floor(a*S.cfg.ppb*mult(l));add(cur,'venta',p,l+' Bs '+a);if(!basic())extras(a);save();cajaRender()}
+function sale(){const a=+$('am').value;if(!(a>0))return;const l=$('ln').value,p=Math.floor(a*S.cfg.ppb*mult(l));add(cur,'venta',p,l+' Bs '+a);if(!basic())extras(a);refBonus().then(()=>{save();cajaRender()})}
 function redeem(i){const r=S.cfg.rewards[i];if(cur.pts<r[1])return;if(!confirm('¿Canjear '+r[0]+'?'))return;add(cur,'canje',-r[1],'Canje: '+r[0]);save();cajaRender()}
 function bonusB(){cur.used[new Date().getFullYear()]=1;add(cur,'bono',S.cfg.bonus.bday,'Cumpleaños');save();cajaRender()}
 function admRender(){const cs=Object.values(S.c),tot=cs.reduce((a,c)=>a+c.pts,0);
  $('admBody').innerHTML='<div class="card"><b>Resumen</b><div class="row"><div class="pts">'+cs.length+'<div class="mu">socios</div></div><div class="pts">'+tot+'<div class="mu">pts en circulación</div></div></div></div>'
- +'<div class="card"><b>Reglas</b><div class="row"><div><label class="mu">Puntos por Bs</label><input id="a1" type="number" step=".1" value="'+S.cfg.ppb+'"></div><div><label class="mu">PIN</label><input id="a2" value="'+esc(S.cfg.pin)+'"></div></div>'
+ +'<div class="card"><b>Reglas</b><div class="row"><div><label class="mu">Puntos por Bs</label><input id="a1" type="number" step=".1" value="'+S.cfg.ppb+'"></div><div></div></div>'
  +'<div class="row"><div><label class="mu">Día de puntos dobles</label><select id="a3">'+DAYS.map((d,i)=>'<option value="'+i+'"'+(i==S.cfg.dd.day?' selected':'')+'>'+d+'</option>').join('')+'</select></div><div><label class="mu">Multiplicador</label><input id="a4" type="number" step=".5" value="'+S.cfg.dd.mult+'"></div></div>'
  +'<label class="mu">Premios (nombre:puntos, uno por línea)</label><textarea id="a5" rows="5" style="width:100%;padding:8px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);color:var(--tx)">'+S.cfg.rewards.map(r=>r.join(':')).join('\n')+'</textarea>'
  +'<label class="mu">Promociones (una por línea)</label><textarea id="a6" rows="3" style="width:100%;padding:8px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);color:var(--tx)">'+esc(S.cfg.promos.join('\n'))+'</textarea><button class="btn p" onclick="saveCfg()" style="margin-top:8px">Guardar reglas</button></div>'
  +'<div class="card pro"><b>🍗 Extras plan pro</b><div class="row"><div><label class="mu">Sellos para el premio</label><input id="x1" type="number" value="'+S.cfg.stamp.goal+'"></div><div><label class="mu">Compra mínima por sello (Bs)</label><input id="x2" type="number" value="'+S.cfg.stamp.min+'"></div></div><label class="mu">Premio de la tarjeta de sellos</label><input id="x3" value="'+esc(S.cfg.stamp.prize)+'"><div class="row"><div><label class="mu">Vigencia cupón de sellos (días)</label><input id="x4" type="number" value="'+S.cfg.stamp.days+'"></div><div><label class="mu">Compra mínima para ruleta (Bs)</label><input id="x5" type="number" value="'+S.cfg.wheel.min+'"></div></div><label class="mu">Vigencia cupones de ruleta (días)</label><input id="x6" type="number" value="'+S.cfg.wheel.days+'"><label class="mu">Premios de la ruleta (nombre|tipo|valor|peso). Tipo: pts, cp (cupón) o none</label><textarea id="x7" rows="5" style="width:100%;padding:8px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);color:var(--tx)">'+S.cfg.wheel.prizes.map(p=>[p.n,p.t,p.v,p.w].join('|')).join('\n')+'</textarea><div class="mu">Se guardan con el botón Guardar reglas.</div></div>'
  +'<div class="card"><b>Socios</b><div class="ov"><table><tr><th>Nombre</th><th>Cel</th><th>Nivel</th><th>Pts</th></tr>'+cs.sort((a,b)=>b.life-a.life).map(c=>'<tr><td>'+esc(c.n)+'</td><td>'+c.p+'</td><td>'+tier(c)[0]+'</td><td>'+c.pts+'</td></tr>').join('')+'</table></div></div>'}
-function saveCfg(){const C=S.cfg;C.ppb=+$('a1').value||1;C.pin=$('a2').value||'1234';C.dd.day=+$('a3').value;C.dd.mult=+$('a4').value||2;
+async function refBonus(){if(!cur.ref||cur.refPaid)return;try{const d=await bref().collection('socios').doc(cur.ref).get();if(!d.exists)return;const r=d.data();ens(r);add(r,'bono',S.cfg.bonus.ref,'Invitaste a '+cur.n);add(cur,'bono',S.cfg.bonus.ref,'Invitado por '+r.n);cur.refPaid=true;S.c[r.p]=r;snap[r.p]='';save()}catch(e){}}
+const SA='jwilsoncruz@gmail.com';
+function staffLogin(k){auth.signInWithEmailAndPassword($('em'+k).value,$('pw'+k).value).catch(()=>alert('Correo o contraseña incorrectos'))}
+async function applyRole(u){let rol=null;if(u){if(u.email===SA)rol='dueno';else{try{const d=await bref().collection('staff').doc(u.uid).get();if(d.exists)rol=d.data().rol}catch(e){}}}
+ const cj=!!rol,ad=rol==='dueno';$('lock').classList.toggle('hide',cj);$('cajaBody').classList.toggle('hide',!cj);$('lock2').classList.toggle('hide',ad);$('admBody').classList.toggle('hide',!ad);$('out').classList.toggle('hide',!u);
+ if(ad)loadAll().then(admRender);if(u&&!rol)alert('Tu usuario no tiene permiso en este negocio')}
+function loadAll(){return bref().collection('socios').get().then(q=>q.forEach(d=>{S.c[d.id]=d.data();snap[d.id]=JSON.stringify(d.data())}))}
+function saStaff(id){const u=$('u_'+id).value.trim();if(!u)return;db.collection('negocios').doc(id).collection('staff').doc(u).set({rol:$('r_'+id).value}).then(()=>alert('Acceso dado')).catch(e=>alert('Error: '+e.code))}
+function saveCfg(){const C=S.cfg;C.ppb=+$('a1').value||1;C.dd.day=+$('a3').value;C.dd.mult=+$('a4').value||2;
  C.rewards=$('a5').value.split('\n').map(l=>l.split(':')).filter(a=>a[0]&&+a[1]).map(a=>[a[0].trim(),+a[1]]);C.promos=$('a6').value.split('\n').filter(x=>x.trim());saveX();bref().update({cfg:toDB(S.cfg)});banner();alert('Guardado')}
 const addDays=d=>{const x=new Date();x.setDate(x.getDate()+d);return x.toISOString().slice(0,10)};
 const ens=c=>{c.st=c.st||0;c.spins=c.spins||0;c.cp=c.cp||[]},live=c=>c.cp.filter(k=>!k.u&&k.exp>=addDays(0));
@@ -147,20 +156,17 @@ function init(){
  bref().onSnapshot(d=>{if(!d.exists){$('app').innerHTML='<div class="card">Negocio no encontrado.</div>';return}
   BIZ=d.data();if(BIZ.active===false){$('app').innerHTML='<div class="card">Este servicio está suspendido. Contacta al administrador.</div>';return}
   S.cfg=Object.assign({},DEF,fromDB(BIZ.cfg||{}));brand();banner()});
- bref().collection('socios').onSnapshot(q=>{q.docChanges().forEach(ch=>{S.c[ch.doc.id]=ch.doc.data();snap[ch.doc.id]=JSON.stringify(S.c[ch.doc.id])});
-  if(me&&!$('mine').classList.contains('hide'))showMine();
-  if(cur&&!$('cajaBody').classList.contains('hide')){cur=S.c[cur.p];cajaRender()}
-  if(!$('admBody').classList.contains('hide'))admRender()})}
+ auth.onAuthStateChanged(applyRole)}
 function saLogin(){auth.signInWithEmailAndPassword($('se').value,$('sp').value).catch(e=>alert(({'auth/invalid-credential':'Correo o contraseña incorrectos','auth/wrong-password':'Contraseña incorrecta','auth/user-not-found':'Ese correo no existe en Authentication','auth/invalid-email':'El correo no es válido','auth/unauthorized-domain':'Dominio no autorizado: agrégalo en Authentication > Configuración > Dominios autorizados','auth/api-key-not-valid.-please-pass-a-valid-api-key.':'La apiKey de FB_CONFIG es incorrecta','auth/operation-not-allowed':'El método correo/contraseña no está activado','auth/too-many-requests':'Demasiados intentos, espera unos minutos'})[e.code]||('Error: '+e.code)))}
 function saInit(){const m=$('sa');auth.onAuthStateChanged(u=>{
  if(!u){m.innerHTML='<div class="card"><b>Panel del administrador</b><input id="se" type="email" placeholder="Correo"><input id="sp" type="password" placeholder="Contraseña"><button class="btn p" onclick="saLogin()">Entrar</button></div>';return}
- m.innerHTML='<div class="card"><b>Nuevo negocio (v3)</b><input id="n1" placeholder="Nombre del negocio"><div class="row"><input id="n2" placeholder="Color" value="#d9480f"><select id="n3"><option value="basico">Plan básico (puntos y premios)</option><option value="pro">Plan pro (+ cumpleaños e invitados)</option></select></div><input id="n4" placeholder="Link del logo (opcional)"><input id="n5" placeholder="PIN del negocio" value="1234"><button class="btn p" onclick="saNew()">Crear negocio</button><div id="st" style="margin-top:8px;font-weight:600"></div></div><div id="sl"></div><button class="btn" onclick="auth.signOut()">Salir</button>';
- db.collection('negocios').onSnapshot(q=>{$('sl').innerHTML=q.docs.map(d=>{const b=d.data(),u=location.origin+location.pathname+'?n='+d.id;return '<div class="card"><b>'+esc(b.name)+'</b> <span class="mu">'+b.plan+(b.active===false?' · SUSPENDIDO':'')+'</span><div class="mu" style="word-break:break-all">'+u+'</div><button class="btn" onclick="navigator.clipboard.writeText(\''+u+'\')">Copiar link</button> <button class="btn" onclick="saTog(\''+d.id+'\','+(b.active===false)+')">'+(b.active===false?'Activar':'Suspender')+'</button></div>'}).join('')||'<div class="mu">Aún no hay negocios.</div>'})})}
+ m.innerHTML='<div class="card"><b>Nuevo negocio (v3)</b><input id="n1" placeholder="Nombre del negocio"><div class="row"><input id="n2" placeholder="Color" value="#d9480f"><select id="n3"><option value="basico">Plan básico (puntos y premios)</option><option value="pro">Plan pro (+ cumpleaños e invitados)</option></select></div><input id="n4" placeholder="Link del logo (opcional)"><button class="btn p" onclick="saNew()">Crear negocio</button><div id="st" style="margin-top:8px;font-weight:600"></div></div><div id="sl"></div><button class="btn" onclick="auth.signOut()">Salir</button>';
+ db.collection('negocios').onSnapshot(q=>{$('sl').innerHTML=q.docs.map(d=>{const b=d.data(),u=location.origin+location.pathname+'?n='+d.id;return '<div class="card"><b>'+esc(b.name)+'</b> <span class="mu">'+b.plan+(b.active===false?' · SUSPENDIDO':'')+'</span><div class="mu" style="word-break:break-all">'+u+'</div><button class="btn" onclick="navigator.clipboard.writeText(\''+u+'\')">Copiar link</button> <button class="btn" onclick="saTog(\''+d.id+'\','+(b.active===false)+')">'+(b.active===false?'Activar':'Suspender')+'</button><div class="row" style="margin-top:8px"><input id="u_'+d.id+'" placeholder="UID del empleado"><select id="r_'+d.id+'"><option value="caja">Cajero</option><option value="dueno">Dueño</option></select></div><button class="btn" onclick="saStaff(\''+d.id+'\')">Dar acceso</button></div>'}).join('')||'<div class="mu">Aún no hay negocios.</div>'})})}
 function st(t){const e=$('st');if(e)e.textContent=t}
 window.onerror=(m)=>st('Error en la página: '+m);
 function saNew(){st('Creando...');try{const n=$('n1').value.trim();if(!n){st('Escribe el nombre del negocio');return}
  const slug=n.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
- const cfg=JSON.parse(JSON.stringify(DEF));cfg.pin=$('n5').value||'1234';
+ const cfg=JSON.parse(JSON.stringify(DEF));
  const t=setTimeout(()=>st('Sigue sin responder. Revisa que la base Firestore exista y las reglas estén publicadas.'),8000);
  db.collection('negocios').doc(slug).set({name:n,slug,color:$('n2').value,logo:$('n4').value.trim(),plan:$('n3').value,active:true,cfg:toDB(cfg)})
  .then(()=>{clearTimeout(t);$('n1').value='';st('✅ Negocio creado: '+slug)}).catch(e=>{clearTimeout(t);st('Error: '+e.code+' - '+e.message)})}catch(e){st('Error: '+e.message)}}
