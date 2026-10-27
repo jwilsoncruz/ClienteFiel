@@ -3,7 +3,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Club de clientes</title>
 <link rel="icon" href="clubnocturno.png">
-
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
@@ -64,6 +63,7 @@ promos:['5% extra en tu cumpleaños: +100 pts todo el mes','Invita a un amigo: +
 const FB_CONFIG={apiKey:"AIzaSyDHZaPeYgfcpwvrJbm0HoaL_P380Dfwn-U",authDomain:"clientesfieles-92075.firebaseapp.com",projectId:"clientesfieles-92075",storageBucket:"clientesfieles-92075.firebasestorage.app",messagingSenderId:"876601108680",appId:"1:876601108680:web:25629d0456593b524dddfd"};
 firebase.initializeApp(FB_CONFIG);const db=firebase.firestore(),auth=firebase.auth();db.settings({experimentalAutoDetectLongPolling:true,merge:true});
 const Q=new URLSearchParams(location.search),SLUG=(Q.get('n')||'').toLowerCase().replace(/[^a-z0-9-]/g,''),ADMIN=Q.has('admin');
+const toDB=c=>({...c,rewards:c.rewards.map(r=>({n:r[0],p:r[1]}))}),fromDB=c=>{const o={...c};if(c.rewards)o.rewards=c.rewards.map(r=>Array.isArray(r)?r:[r.n,r.p]);return o};
 let S={cfg:DEF,c:{}},snap={},BIZ={};
 const bref=()=>db.collection('negocios').doc(SLUG),basic=()=>BIZ.plan==='basico';
 const save=()=>{for(const p in S.c){const j=JSON.stringify(S.c[p]);if(snap[p]!==j){snap[p]=j;bref().collection('socios').doc(p).set(S.c[p])}}};
@@ -114,7 +114,7 @@ function admRender(){const cs=Object.values(S.c),tot=cs.reduce((a,c)=>a+c.pts,0)
  +'<label class="mu">Promociones (una por línea)</label><textarea id="a6" rows="3" style="width:100%;padding:8px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);color:var(--tx)">'+esc(S.cfg.promos.join('\n'))+'</textarea><button class="btn p" onclick="saveCfg()" style="margin-top:8px">Guardar reglas</button></div>'
  +'<div class="card"><b>Socios</b><div class="ov"><table><tr><th>Nombre</th><th>Cel</th><th>Nivel</th><th>Pts</th></tr>'+cs.sort((a,b)=>b.life-a.life).map(c=>'<tr><td>'+esc(c.n)+'</td><td>'+c.p+'</td><td>'+tier(c)[0]+'</td><td>'+c.pts+'</td></tr>').join('')+'</table></div></div>'}
 function saveCfg(){const C=S.cfg;C.ppb=+$('a1').value||1;C.pin=$('a2').value||'1234';C.dd.day=+$('a3').value;C.dd.mult=+$('a4').value||2;
- C.rewards=$('a5').value.split('\n').map(l=>l.split(':')).filter(a=>a[0]&&+a[1]).map(a=>[a[0].trim(),+a[1]]);C.promos=$('a6').value.split('\n').filter(x=>x.trim());bref().update({cfg:S.cfg});banner();alert('Guardado')}
+ C.rewards=$('a5').value.split('\n').map(l=>l.split(':')).filter(a=>a[0]&&+a[1]).map(a=>[a[0].trim(),+a[1]]);C.promos=$('a6').value.split('\n').filter(x=>x.trim());bref().update({cfg:toDB(S.cfg)});banner();alert('Guardado')}
 function brand(){document.title=BIZ.name;$('bn').innerHTML=(BIZ.logo?'<img src="'+esc(BIZ.logo)+'" style="height:36px;vertical-align:middle;border-radius:8px"> ':'')+esc(BIZ.name);$('bs').textContent='Club de clientes';
  if(BIZ.color)document.documentElement.style.setProperty('--pr',BIZ.color);if(basic()){const st=document.createElement('style');st.textContent='.pro{display:none!important}';document.head.appendChild(st)}}
 function init(){
@@ -123,7 +123,7 @@ function init(){
  $('app').classList.remove('hide');
  bref().onSnapshot(d=>{if(!d.exists){$('app').innerHTML='<div class="card">Negocio no encontrado.</div>';return}
   BIZ=d.data();if(BIZ.active===false){$('app').innerHTML='<div class="card">Este servicio está suspendido. Contacta al administrador.</div>';return}
-  S.cfg=Object.assign({},DEF,BIZ.cfg||{});brand();banner()});
+  S.cfg=Object.assign({},DEF,fromDB(BIZ.cfg||{}));brand();banner()});
  bref().collection('socios').onSnapshot(q=>{q.docChanges().forEach(ch=>{S.c[ch.doc.id]=ch.doc.data();snap[ch.doc.id]=JSON.stringify(S.c[ch.doc.id])});
   if(me&&!$('mine').classList.contains('hide'))showMine();
   if(cur&&!$('cajaBody').classList.contains('hide')){cur=S.c[cur.p];cajaRender()}
@@ -139,7 +139,7 @@ function saNew(){st('Creando...');try{const n=$('n1').value.trim();if(!n){st('Es
  const slug=n.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
  const cfg=JSON.parse(JSON.stringify(DEF));cfg.pin=$('n5').value||'1234';
  const t=setTimeout(()=>st('Sigue sin responder. Revisa que la base Firestore exista y las reglas estén publicadas.'),8000);
- db.collection('negocios').doc(slug).set({name:n,slug,color:$('n2').value,logo:$('n4').value.trim(),plan:$('n3').value,active:true,cfg})
+ db.collection('negocios').doc(slug).set({name:n,slug,color:$('n2').value,logo:$('n4').value.trim(),plan:$('n3').value,active:true,cfg:toDB(cfg)})
  .then(()=>{clearTimeout(t);$('n1').value='';st('✅ Negocio creado: '+slug)}).catch(e=>{clearTimeout(t);st('Error: '+e.code+' - '+e.message)})}catch(e){st('Error: '+e.message)}}
 function saTog(id,on){db.collection('negocios').doc(id).update({active:on})}
 init();
