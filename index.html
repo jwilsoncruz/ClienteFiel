@@ -139,8 +139,10 @@ function cajaExtra(c){if(basic())return'';ens(c);const L=live(c);
  return '<div class="card"><b>🎟️ Sellos, cupones y ruleta</b><div class="mu">Sellos: '+c.st+'/'+S.cfg.stamp.goal+' · Giros de ruleta: '+c.spins+'</div>'
  +(L.length?L.map(k=>'<div class="rw"><span>'+esc(k.n)+' <span class="mu">vence '+k.exp+'</span></span><button class="btn" onclick="useCp(\''+k.id+'\')">Usar</button></div>').join(''):'<div class="mu">Sin cupones vigentes</div>')
  +(c.spins>0?'<button class="btn p" style="margin-top:8px" onclick="spin()">🎡 Girar ruleta ('+c.spins+')</button>':'')+'<div id="wh"></div>'
- +'<div class="row" style="margin-top:8px"><input id="cn" placeholder="Cupón manual (ej. Refresco gratis)"><input id="cd" type="number" placeholder="Días de vigencia" value="15"></div><button class="btn" onclick="manCp()">Entregar cupón</button></div>'}
+ +'<div class="row" style="margin-top:8px"><input id="cn" placeholder="Cupón manual (ej. Refresco gratis)"><input id="cd" type="number" placeholder="Días de vigencia" value="15"></div><button class="btn" onclick="manCp()">Entregar cupón</button><div class="row" style="margin-top:12px"><input id="sn" type="number" min="1" placeholder="Sellos que ya tenía (tarjeta anterior)"><button class="btn" onclick="addSt()">Agregar sellos</button></div></div>'}
 function useCp(id){const k=cur.cp.find(x=>x.id==id);if(!k||k.u||k.exp<addDays(0))return;if(!confirm('¿Usar el cupón "'+k.n+'"?'))return;k.u=true;add(cur,'cupon',0,'Cupón usado: '+k.n);save();cajaRender()}
+function addSt(){const n=Math.floor(+$('sn').value);if(!(n>0)||n>50)return alert('Escribe un número de sellos válido');ens(cur);const g=S.cfg.stamp.goal;cur.st+=n;let gan=0;while(cur.st>=g){cur.st-=g;giveCp(cur,S.cfg.stamp.prize,S.cfg.stamp.days);gan++}
+ add(cur,'sellos',0,'Sellos anteriores agregados: '+n+(gan?' · cupones ganados: '+gan:''));save();cajaRender()}
 function manCp(){const n=$('cn').value.trim();if(!n)return;giveCp(cur,n,+$('cd').value||15);save();cajaRender()}
 function spin(){if(cur.spins<1)return;const P=S.cfg.wheel.prizes,tot=P.reduce((a,p)=>a+p.w,0);let r=Math.random()*tot,i=0;for(;i<P.length-1;i++){r-=P[i].w;if(r<0)break}
  const seg=360/P.length,ang=1800+(360-(i*seg+seg/2)),cols=['#d9480f','#f59f00','#2f9e44','#1971c2','#9c36b5','#e03131'],p=P[i];
